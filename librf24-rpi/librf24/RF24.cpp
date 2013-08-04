@@ -875,6 +875,8 @@ rf24_pa_dbm_e RF24::getPALevel(void)
 
 bool RF24::setDataRate(rf24_datarate_e speed)
 {
+
+  printf("in setDataRate\n");
   bool result = false;
   uint8_t setup = read_register(RF_SETUP) ;
 
@@ -904,7 +906,9 @@ bool RF24::setDataRate(rf24_datarate_e speed)
     }
   }
   write_register(RF_SETUP,setup);
+  printf("wrote %x\n",setup);
 
+  printf("read %x\n",read_register(RF_SETUP));
   // Verify our result
   if ( read_register(RF_SETUP) == setup )
   {
@@ -915,6 +919,7 @@ bool RF24::setDataRate(rf24_datarate_e speed)
     wide_band = false;
   }
 
+  printf("returning %d\n",result);
   return result;
 }
 
