@@ -10,6 +10,8 @@
  */
 
 #include "gpio.h"
+#include "errno.h"
+#include <stdlib.h>
 
 GPIO::GPIO() {
 }
@@ -21,6 +23,10 @@ void GPIO::open(int port, int DDR)
 {
 	FILE *f;
 	f = fopen("/sys/class/gpio/export", "w");
+	if (f == NULL) {
+		perror("open gpio failed");
+		exit(1);
+	}
 	fprintf(f, "%d\n", port);
 	fclose(f);
 
