@@ -1,4 +1,4 @@
-tools="/home/ccooper/projects/tools"
+tools="../../../tools"
 export ARCH=arm
 export CROSS_COMPILE=arm-bcm2708hardfp-linux-gnueabi-
 export CC=${tools}/arm-bcm2708/arm-bcm2708hardfp-linux-gnueabi/bin/arm-bcm2708hardfp-linux-gnueabi-gcc
