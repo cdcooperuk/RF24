@@ -24,22 +24,22 @@ all: librf24
 
 # Make the library
 librf24: RF24.o gpio.o spi.o compatibility.o
-	$(CPP) -shared -Wl,-soname,librf24.so.1 ${CCFLAGS}  -o ${LIBNAME} compatibility.o gpio.o spi.o RF24.o
+	$(CXX) -shared -Wl,-soname,librf24.so.1 ${CCFLAGS}  -o ${LIBNAME} compatibility.o gpio.o spi.o RF24.o
 	ln -sf ${LIBNAME} ${LIBNAME_BASE}
 
 
 # Library parts
-RF24.o: RF24.cpp
-	$(CPP) -Wall -fPIC ${CCFLAGS} -c RF24.cpp
+RF24.o: RF24.CXX
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c RF24.CXX
 
-gpio.o: gpio.cpp
-	$(CPP) -Wall -fPIC ${CCFLAGS} -c gpio.cpp
+gpio.o: gpio.CXX
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c gpio.CXX
 
-spi.o: spi.cpp
-	$(CPP) -Wall -fPIC ${CCFLAGS} -c spi.cpp
+spi.o: spi.CXX
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c spi.CXX
 
 compatibility.o: compatibility.c
-	$(CPP) -Wall -fPIC  ${CCFLAGS} -c compatibility.c
+	$(CXX) -Wall -fPIC  ${CCFLAGS} -c compatibility.c
 
 # clear build files
 clean:
