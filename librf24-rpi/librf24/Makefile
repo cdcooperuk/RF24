@@ -29,14 +29,14 @@ librf24: RF24.o gpio.o spi.o compatibility.o
 
 
 # Library parts
-RF24.o: RF24.CXX
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c RF24.CXX
+RF24.o: RF24.cpp
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c RF24.cpp
 
-gpio.o: gpio.CXX
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c gpio.CXX
+gpio.o: gpio.cpp
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c gpio.cpp
 
-spi.o: spi.CXX
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c spi.CXX
+spi.o: spi.cpp
+	$(CXX) -Wall -fPIC ${CCFLAGS} -c spi.cpp
 
 compatibility.o: compatibility.c
 	$(CXX) -Wall -fPIC  ${CCFLAGS} -c compatibility.c
