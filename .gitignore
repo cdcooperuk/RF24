@@ -13,7 +13,7 @@ out/
 out_native/
 version.h
 Session.vim
-librf*.so.*
-librf*.so
+*librf*.so.*
+*librf*.so
 .DS*
 
