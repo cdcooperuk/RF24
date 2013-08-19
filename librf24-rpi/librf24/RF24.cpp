@@ -239,7 +239,7 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 /****************************************************************************/
 
 RF24::RF24(string _spidevice, uint32_t _spispeed, uint8_t _cepin):
-spidevice( _spidevice) ,spispeed( _spispeed),ce_pin(_cepin), wide_band(true), p_variant(false),
+ce_pin(_cepin), spidevice( _spidevice) ,spispeed( _spispeed), wide_band(true), p_variant(false),
   payload_size(32), ack_payload_available(false), dynamic_payloads_enabled(false),
   pipe0_reading_address(0)
 {
@@ -493,7 +493,7 @@ bool RF24::write( const void* buf, uint8_t len )
   do
   {
     status = read_register(OBSERVE_TX,&observe_tx,1);
-    IF_SERIAL_DEBUG(printf(observe_tx,HEX));
+    IF_SERIAL_DEBUG(printf("%hhd", observe_tx));
   }
   while( ! ( status & ( _BV(TX_DS) | _BV(MAX_RT) ) ) && ( __millis() - sent_at < timeout ) );
 
@@ -510,7 +510,7 @@ bool RF24::write( const void* buf, uint8_t len )
   {
     ack_payload_length = getDynamicPayloadSize();
     IF_SERIAL_DEBUG(printf("[AckPacket]/"));
-    IF_SERIAL_DEBUG(printfln(ack_payload_length,DEC));
+    IF_SERIAL_DEBUG(printf("%d\n", ack_payload_length));
   }
 
 
@@ -616,6 +616,7 @@ void RF24::whatHappened(bool& tx_ok,bool& tx_fail,bool& rx_ready)
   tx_ok = status & _BV(TX_DS);
   tx_fail = status & _BV(MAX_RT);
   rx_ready = status & _BV(RX_DR);
+  printf("tx_ok=%d tx_fail=%d rx_ready=%d\n", tx_ok, tx_fail, rx_ready);
 }
 
 /****************************************************************************/
