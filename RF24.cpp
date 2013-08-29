@@ -555,13 +555,15 @@ void RF24::whatHappened(bool& tx_ok, bool& tx_fail, bool& rx_ready) {
 	tx_ok = status & _BV(TX_DS);
 	tx_fail = status & _BV(MAX_RT);
 	rx_ready = status & _BV(RX_DR);
-	Serial.print("TX_DS=");
-	Serial.print(tx_ok);
-	Serial.print(" MAX_RT=");
-	Serial.print(tx_fail);
-	Serial.print(" RX_DR=");
-	Serial.print(rx_ready);
-	Serial.println();
+	IF_SERIAL_DEBUG(
+		Serial.print("TX_DS=");
+		Serial.print(tx_ok);
+		Serial.print(" MAX_RT=");
+		Serial.print(tx_fail);
+		Serial.print(" RX_DR=");
+		Serial.print(rx_ready);
+		Serial.println();
+	)
 }
 
 /****************************************************************************/
