@@ -1,5 +1,8 @@
 /* 
  * https://github.com/mrshu/GPIOlib
+ *
+ * see https://www.kernel.org/doc/Documentation/gpio.txt
+ *
  * Copyright (c) 2011, Copyright (c) 2011 mr.Shu
  * All rights reserved. 
  * 
@@ -7,6 +10,7 @@
  * File:   gpio.cpp
  * Author: purinda (purinda@gmail.com)
  * 
+ *
  */
 
 #include "gpio.h"
@@ -19,8 +23,12 @@ GPIO::GPIO() {
 GPIO::~GPIO() {
 }
 
+/*
+ * export pin and set its direction.
+ */
 void GPIO::open(int port, int DDR)
 {
+	// write the pin number to gpio
 	FILE *f;
 	f = fopen("/sys/class/gpio/export", "w");
 	if (f == NULL) {
@@ -33,11 +41,14 @@ void GPIO::open(int port, int DDR)
 	char file[128];
 	sprintf(file, "/sys/class/gpio/gpio%d/direction", port);
 	f = fopen(file, "w");
-	if (DDR == 0)	fprintf(f, "in\n");
+	if (DDR == DIRECTION_IN)	fprintf(f, "in\n");
 	else		fprintf(f, "out\n");
 	fclose(f);
 }
 
+/**
+ * unexport the pin.
+ */
 void GPIO::close(int port)
 {
 	FILE *f;
@@ -46,6 +57,10 @@ void GPIO::close(int port)
 	fclose(f);
 }
 
+/**
+ *
+ * TODO is it efficient to constantly open/close?
+ */
 int GPIO::read(int port)
 {
 	FILE *f;

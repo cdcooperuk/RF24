@@ -43,8 +43,8 @@ compatibility.o: compatibility.c
 
 # clear build files
 clean:
-	rm -rf *o ${LIBNAME}
-	unlink ${LIBNAME_BASE}
+	-rm -rf *o ${LIBNAME}
+	-unlink ${LIBNAME_BASE}
 
 # Install the library to LIBPATH
 install: 

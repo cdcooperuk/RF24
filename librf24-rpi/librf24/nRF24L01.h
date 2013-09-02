@@ -102,7 +102,7 @@
 #define R_REGISTER    0x00
 #define W_REGISTER    0x20
 #define REGISTER_MASK 0x1F
-#define ACTIVATE      0x50
+#define ACTIVATE      0x50 // NRF24L01 only
 #define R_RX_PL_WID   0x60
 #define R_RX_PAYLOAD  0x61
 #define W_TX_PAYLOAD  0xA0

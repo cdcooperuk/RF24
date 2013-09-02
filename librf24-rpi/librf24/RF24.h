@@ -651,6 +651,11 @@ public:
    */
   bool testRPD(void) ;
 
+  /**
+   * Clear Data Ready RX , Data Sent TX , and max retransmits
+   */
+  void clearInterrupts(void);
+
   /**@}*/
 };
 
