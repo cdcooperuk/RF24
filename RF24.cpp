@@ -64,6 +64,8 @@ uint8_t RF24::read_register(uint8_t reg) {
 uint8_t RF24::write_register(uint8_t reg, const uint8_t* buf, uint8_t len) {
 	uint8_t status;
 
+	IF_SERIAL_DEBUG(printf_P(PSTR("write_register(%02x, %d bytes)\r\n"),reg,len));
+
 	csn(LOW);
 	status = SPI.transfer( W_REGISTER | ( REGISTER_MASK & reg));
 	while (len--)
@@ -191,8 +193,7 @@ void RF24::print_observe_tx(uint8_t value) {
 /****************************************************************************/
 
 void RF24::print_byte_register(const char* name, uint8_t reg, uint8_t qty) {
-	char extra_tab = strlen_P(name) < 8 ? '\t' : 0;
-	printf_P(PSTR(PRIPSTR"\t%c ="), name, extra_tab);
+	printf_P(PSTR(PRIPSTR(-16)"="), name);
 	while (qty--)
 		printf_P(PSTR(" 0x%02x"), read_register(reg++));
 	printf_P(PSTR("\r\n"));
@@ -201,9 +202,7 @@ void RF24::print_byte_register(const char* name, uint8_t reg, uint8_t qty) {
 /****************************************************************************/
 
 void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty) {
-	char extra_tab = strlen_P(name) < 8 ? '\t' : 0;
-	printf_P(PSTR(PRIPSTR"\t%c ="), name, extra_tab);
-
+	printf_P(PSTR(PRIPSTR(-16)"=="), name);
 	while (qty--) {
 		uint8_t buffer[5];
 		read_register(reg++, buffer, sizeof buffer);
@@ -563,7 +562,7 @@ void RF24::whatHappened(bool& tx_ok, bool& tx_fail, bool& rx_ready) {
 		Serial.print(" RX_DR=");
 		Serial.print(rx_ready);
 		Serial.println();
-	)
+	);
 }
 
 /****************************************************************************/

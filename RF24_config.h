@@ -49,7 +49,8 @@ extern HardwareSPI SPI;
 // Progmem is Arduino-specific
 #ifdef ARDUINO
 #include <avr/pgmspace.h>
-#define PRIPSTR "%S"
+// %S is printf_p flag for string in PROGMEM
+#define PRIPSTR(flag) "%"#flag"S"
 #else
 typedef char const char;
 typedef uint16_t prog_uint16_t;
