@@ -185,6 +185,12 @@ void RF24::print_status(uint8_t status) {
 
 /****************************************************************************/
 
+void RF24::print_status() {
+	print_status(get_status());
+}
+
+/****************************************************************************/
+
 void RF24::print_observe_tx(uint8_t value) {
 	printf_P(PSTR("OBSERVE_TX=%02x: POLS_CNT=%x ARC_CNT=%x\r\n"), value,
 			(value >> PLOS_CNT) & B1111, (value >> ARC_CNT) & B1111);
@@ -444,7 +450,7 @@ bool RF24::write(const void* buf, uint8_t len, const bool multicast) {
 
 	// Call this when you get an interrupt
 	// The status tells us three things
-	// * The send was successful (TX_DS)
+	// * ------The send was successful (TX_DS)
 	// * The send failed, too many retries (MAX_RT)
 	// * There is an ack packet waiting (RX_DR)
 	bool tx_ok, tx_fail;

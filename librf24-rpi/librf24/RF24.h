@@ -546,6 +546,14 @@ public:
   void printDetails(void);
 
   /**
+   * Decode and print the current status to stdout
+   *
+   * @warning Does nothing if stdout is not defined.  See fdevopen in stdio.h
+   */
+  void print_status();
+
+
+  /**
    * Enter low-power mode
    *
    * To return to normal power mode, either write() some data or

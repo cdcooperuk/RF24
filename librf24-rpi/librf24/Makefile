@@ -11,6 +11,9 @@
 # use make all and mak install to install the library 
 # You can change the install directory by editing the LIBDIR line
 #
+HW=$(shell uname -m)
+include Makefile.$(HW)
+
 LIBDIR=/usr/local/lib
 LIBNAME_BASE=librf24.so
 LIBNAME=${LIBNAME_BASE}.1.0

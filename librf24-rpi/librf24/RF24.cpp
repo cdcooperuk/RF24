@@ -7,6 +7,7 @@
  */
 
 #include "nRF24L01.h"
+#undef SERIAL_DEBUG
 #include "RF24_config.h"
 #include "RF24.h"
 
@@ -180,6 +181,12 @@ void RF24::print_status(uint8_t status) {
 
 /****************************************************************************/
 
+void RF24::print_status() {
+	print_status(get_status());
+}
+
+/****************************************************************************/
+
 void RF24::print_observe_tx(uint8_t value) {
 	printf_P(PSTR("OBSERVE_TX=%02x: POLS_CNT=%x ARC_CNT=%x\r\n"), value,
 			(value >> PLOS_CNT) & 0b1111, (value >> ARC_CNT) & 0b1111);
@@ -269,8 +276,7 @@ static const char rf24_crclength_e_str_0[] PROGMEM = "Disabled";
 static const char rf24_crclength_e_str_1[] PROGMEM = "8 bits";
 static const char rf24_crclength_e_str_2[] PROGMEM = "16 bits";
 static const char * const rf24_crclength_e_str_P[] PROGMEM
-		= { rf24_crclength_e_str_0, rf24_crclength_e_str_1,
-				rf24_crclength_e_str_2, };
+= { rf24_crclength_e_str_0, rf24_crclength_e_str_1, rf24_crclength_e_str_2, };
 static const char rf24_pa_dbm_e_str_0[] PROGMEM = "PA_MIN";
 static const char rf24_pa_dbm_e_str_1[] PROGMEM = "PA_LOW";
 static const char rf24_pa_dbm_e_str_2[] PROGMEM = "PA_HIGH";
@@ -299,13 +305,13 @@ void RF24::printDetails(void) {
 	print_byte_register(PSTR("DYNPD/FEATURE"), DYNPD, 2);
 
 	printf_P(PSTR("Data Rate\t = %s\r\n"),
-			pgm_read_word(&rf24_datarate_e_str_P[getDataRate()]));
+	pgm_read_word(&rf24_datarate_e_str_P[getDataRate()]));
 	printf_P(PSTR("Model\t\t = %s\r\n"),
-			pgm_read_word(&rf24_model_e_str_P[isPVariant()]));
+	pgm_read_word(&rf24_model_e_str_P[isPVariant()]));
 	printf_P(PSTR("CRC Length\t = %s\r\n"),
-			pgm_read_word(&rf24_crclength_e_str_P[getCRCLength()]));
+	pgm_read_word(&rf24_crclength_e_str_P[getCRCLength()]));
 	printf_P(PSTR("PA Power\t = %s\r\n"),
-			pgm_read_word(&rf24_pa_dbm_e_str_P[getPALevel()]));
+	pgm_read_word(&rf24_pa_dbm_e_str_P[getPALevel()]));
 }
 
 /****************************************************************************/
@@ -338,7 +344,7 @@ void RF24::begin(void) {
 	// Enabling 16b CRC is by far the most obvious case if the wrong timing is used - or skipped.
 	// Technically we require 4.5ms + 14us as a worst case. We'll just call it 5ms for good measure.
 	// WARNING: Delay is based on P-variant whereby non-P *may* require different timing.
-	delay( 5 );
+	delay( 5);
 
 	// Adjustments as per gcopeland fork
 	//resetcfg();
@@ -446,10 +452,11 @@ bool RF24::write(const void* buf, uint8_t len) {
 	uint8_t observe_tx;
 	uint8_t status;
 	uint32_t sent_at = __millis();
-	const uint32_t timeout = 500; //ms to wait for timeout
+	const uint32_t timeout = 100; //ms to wait for timeout
 	do {
 		status = read_register(OBSERVE_TX, &observe_tx, 1);
-		IF_SERIAL_DEBUG(printf("%hhd", observe_tx));
+		// top 4 bits are lost packets, lower 4 are retransmitted
+		IF_SERIAL_DEBUG(printf("PLOS_CNT=%d ARC_CNT =%d\n", observe_tx >>4, observe_tx & 0x0F));
 	} while (!(status & ( _BV(TX_DS) | _BV(MAX_RT)))
 			&& (__millis() - sent_at < timeout));
 
@@ -464,7 +471,7 @@ bool RF24::write(const void* buf, uint8_t len) {
 	// Handle the ack packet
 	if (ack_payload_available) {
 		ack_payload_length = getDynamicPayloadSize();
-		IF_SERIAL_DEBUG(printf("[AckPacket]/")); IF_SERIAL_DEBUG(printf("%d\n", ack_payload_length));
+		IF_SERIAL_DEBUG(printf("[AckPacket]/"));IF_SERIAL_DEBUG(printf("%d\n", ack_payload_length));
 	}
 
 	// Disable powerDown and flush_tx as per gcopeland fork
@@ -480,14 +487,14 @@ void RF24::startWrite(const void* buf, uint8_t len) {
 	write_register(CONFIG,
 			(read_register(CONFIG) | _BV(PWR_UP)) & ~_BV(PRIM_RX));
 // Adjustments as per gcopeland fork  
-// delayMicroseconds(150);
+	delayMicroseconds(150);
 
 	// Send the payload
 	write_payload(buf, len);
 
 	// Allons!
 	ce(HIGH);
-	delayMicroseconds(10);
+	delayMicroseconds(15);
 	ce(LOW);
 }
 
@@ -557,7 +564,7 @@ void RF24::whatHappened(bool& tx_ok, bool& tx_fail, bool& rx_ready) {
 	// Read the status & reset the status in one easy call
 	// Or is that such a good idea?
 	uint8_t status = write_register(STATUS,
-			_BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+	_BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 
 	// Report to the user what happened
 	tx_ok = status & _BV(TX_DS);
@@ -609,9 +616,8 @@ void RF24::openReadingPipe(uint8_t child, uint64_t address) {
 		// Note it would be more efficient to set all of the bits for all open
 		// pipes at once.  However, I thought it would make the calling code
 		// more simple to do it this way.
-		write_register(EN_RXADDR,
-				read_register(
-						EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
+		write_register(EN_RXADDR, read_register(
+		EN_RXADDR) | _BV(pgm_read_byte(&child_pipe_enable[child])));
 	}
 }
 
