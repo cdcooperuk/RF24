@@ -73,10 +73,11 @@
 #endif
 
 // Progmem is Arduino-specific
-//#ifdef ARDUINO
-//#include <avr/pgmspace.h>
-//#define PRIPSTR "%S"
-//#else
+#ifdef ARDUINO
+#include <avr/pgmspace.h>
+// %S is printf_p flag for string in PROGMEM
+#define PRIPSTR(flag) "%"#flag"S"
+#else
 //typedef char const char;
 typedef uint16_t prog_uint16_t;
 #define PSTR(x) (x)
@@ -85,7 +86,7 @@ typedef uint16_t prog_uint16_t;
 #define PROGMEM
 #define pgm_read_word(p) (*(p)) 
 #define PRIPSTR "%s"
-
+#endif
 
 // Function, constant map as a result of migrating from Arduino
 #define LOW GPIO::OUTPUT_LOW

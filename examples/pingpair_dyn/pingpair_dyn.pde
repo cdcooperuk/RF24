@@ -20,14 +20,9 @@
 // Hardware configuration
 //
 
-// Set up nRF24L01 radio on SPI bus plus pins 9 & 10
+// Set up nRF24L01 radio on SPI bus plus pins 8 & 6
 
-<<<<<<< HEAD
-RF24 radio(9,10);
-=======
-//RF24 radio(8,9);
-RF24 radio(22,23);
->>>>>>> 828add79a5375479cd29a7433c598b8ce56ee60b
+RF24 radio(8,6);
 
 // sets the role of this unit in hardware.  Connect to GND to be the 'pong' receiver
 // Leave open to be the 'ping' transmitter

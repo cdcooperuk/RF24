@@ -7,7 +7,6 @@
  */
 
 #include "nRF24L01.h"
-#undef SERIAL_DEBUG
 #include "RF24_config.h"
 #include "RF24.h"
 
@@ -449,24 +448,47 @@ bool RF24::write(const void* buf, uint8_t len) {
 	// Begin the write
 	startWrite(buf, len);
 
+	// ------------
+	// At this point we could return from a non-blocking write, and then call
+	// the rest after an interrupt
+
+	// Instead, we are going to block here until we get TX_DS (transmission completed and ack'd)
+	// or MAX_RT (maximum retries, transmission failed).  Also, we'll timeout in case the radio
+	// is flaky and we get neither.
+
+	// IN the end, the send should be blocking.  It comes back in 60ms worst case.
+	// Generally much faster.
 	uint8_t observe_tx;
 	uint8_t status;
-	uint32_t sent_at = __millis();
-	const uint32_t timeout = 100; //ms to wait for timeout
+	uint32_t sent_at = __micros();
+	const uint32_t timeout = getMaxTimeout(); //us to wait for timeout
+
+	// Monitor the send
+	bool timedOut;
 	do {
 		status = read_register(OBSERVE_TX, &observe_tx, 1);
 		// top 4 bits are lost packets, lower 4 are retransmitted
-		IF_SERIAL_DEBUG(printf("PLOS_CNT=%d ARC_CNT =%d\n", observe_tx >>4, observe_tx & 0x0F));
-	} while (!(status & ( _BV(TX_DS) | _BV(MAX_RT)))
-			&& (__millis() - sent_at < timeout));
+		IF_SERIAL_DEBUG(print_observe_tx(observe_tx));
+		timedOut = (__micros() - sent_at > timeout);
+		delayMicroseconds(10000);  // this is a timeshared machine: don't spin
+	} while (!(status & ( _BV(TX_DS) | _BV(MAX_RT))) && !timedOut);
 
+	// The part above is what you could recreate with your own interrupt handler,
+	// and then call this when you got an interrupt
+	// ------------
+
+	// Call this when you get an interrupt
+	// The status tells us three things
+	// * ------The send was successful (TX_DS)
+	// * The send failed, too many retries (MAX_RT)
+	// * There is an ack packet waiting (RX_DR)
 	bool tx_ok, tx_fail;
 	whatHappened(tx_ok, tx_fail, ack_payload_available);
 
 	//printf("%u%u%u\r\n",tx_ok,tx_fail,ack_payload_available);
 
 	result = tx_ok;
-	IF_SERIAL_DEBUG(printf(result?"...OK.":"...Failed"));
+	IF_SERIAL_DEBUG(printf("%s %s\n",result?"...OK.":"...Failed", timedOut?"Timed out":""));
 
 	// Handle the ack packet
 	if (ack_payload_available) {
@@ -899,6 +921,21 @@ void RF24::setRetries(uint8_t delay, uint8_t count) {
 
 void RF24::clearInterrupts() {
 	write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+}
+
+/****************************************************************************/
+
+uint8_t RF24::getRetries(void) {
+	return read_register( SETUP_RETR);
+}
+
+/****************************************************************************/
+
+uint16_t RF24::getMaxTimeout(void) {
+	uint8_t retries = getRetries();
+	uint16_t to = ((250 + (250 * ((retries & 0xf0) >> 4))) * (retries & 0x0f));
+
+	return to;
 }
 // vim:ai:cin:sts=2 sw=2 ft=cpp
 

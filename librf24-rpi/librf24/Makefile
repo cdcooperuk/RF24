@@ -33,16 +33,16 @@ librf24: RF24.o gpio.o spi.o compatibility.o
 
 # Library parts
 RF24.o: RF24.cpp
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c RF24.cpp
+	$(CXX)  $(CPPFLAGS) -Wall -fPIC ${CCFLAGS} -c RF24.cpp
 
 gpio.o: gpio.cpp
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c gpio.cpp
+	$(CXX)  $(CPPFLAGS) -Wall -fPIC ${CCFLAGS} -c gpio.cpp
 
 spi.o: spi.cpp
-	$(CXX) -Wall -fPIC ${CCFLAGS} -c spi.cpp
+	$(CXX)  $(CPPFLAGS) -Wall -fPIC ${CCFLAGS} -c spi.cpp
 
 compatibility.o: compatibility.c
-	$(CXX) -Wall -fPIC  ${CCFLAGS} -c compatibility.c
+	$(CXX)  $(CPPFLAGS) -Wall -fPIC  ${CCFLAGS} -c compatibility.c
 
 # clear build files
 clean:
