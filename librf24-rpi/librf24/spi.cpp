@@ -10,7 +10,7 @@
 
 #include "spi.h"
 
-SPI::SPI() {
+SPIClass::SPIClass() {
 	
 //	this->device = "/dev/spidev0.0";;
 	this->bits = 8;
@@ -23,22 +23,22 @@ SPI::SPI() {
 //	this->init();
 }
 
-void SPI::setbits( uint8_t bits )
+void SPIClass::setbits( uint8_t bits )
 {
  this->bits = bits;
 }
 
-void SPI::setspeed( uint32_t speed )
+void SPIClass::setspeed( uint32_t speed )
 {
  this->speed = speed;
 }
 
-void SPI::setdevice( string devicefile ) 
+void SPIClass::setdevice( string devicefile )
 {
 	this->device = devicefile;
 }
 
-void SPI::init()
+void SPIClass::init()
 {
 	int ret;
 	this->fd = open(this->device.c_str(), O_RDWR);
@@ -99,7 +99,7 @@ void SPI::init()
 	}
 }
 
-uint8_t SPI::transfer(uint8_t tx_)
+uint8_t SPIClass::transfer(uint8_t tx_)
 {
 	int ret;
 	// One byte is transfered at once
@@ -126,7 +126,7 @@ uint8_t SPI::transfer(uint8_t tx_)
 	return rx[0];
 }
 
-SPI::~SPI() {
+SPIClass::~SPIClass() {
 	close(this->fd);
 }
 

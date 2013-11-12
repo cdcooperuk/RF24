@@ -189,12 +189,9 @@ void RF24::print_status(uint8_t status)
 {
 	printf_P(
 			PSTR("STATUS=0x%02x RX_DR=%x TX_DS=%x MAX_RT=%x RX_P_NO=%x TX_FULL=%x\r\n"),
-			status, 
-			(status & _BV(RX_DR)) ? 1 : 0,
-			(status & _BV(TX_DS)) ? 1 : 0, 
-			(status & _BV(MAX_RT)) ? 1 : 0,
-			((status >> RX_P_NO) & B111), 
-			(status & _BV(TX_FULL)) ? 1 : 0);
+			status, (status & _BV(RX_DR)) ? 1 : 0,
+			(status & _BV(TX_DS)) ? 1 : 0, (status & _BV(MAX_RT)) ? 1 : 0,
+			((status >> RX_P_NO) & 0b111), (status & _BV(TX_FULL)) ? 1 : 0);
 }
 
 /****************************************************************************/
@@ -209,7 +206,7 @@ void RF24::print_status()
 void RF24::print_observe_tx(uint8_t value)
 {
 	printf_P(PSTR("OBSERVE_TX=%02x: POLS_CNT=%x ARC_CNT=%x\r\n"), value,
-			(value >> PLOS_CNT) & B1111, (value >> ARC_CNT) & B1111);
+			(value >> PLOS_CNT) & 0b1111, (value >> ARC_CNT) & 0b1111);
 }
 
 /****************************************************************************/
@@ -246,7 +243,7 @@ void RF24::print_address_register(const char* name, uint8_t reg, uint8_t qty)
 RF24::RF24(uint8_t _cepin, uint8_t _cspin) :
 		ce_pin(_cepin), csn_pin(_cspin), wide_band(false), p_variant(false), payload_size(
 				32), ack_payload_available(false), dynamic_payloads_enabled(
-				false), pipe0_reading_address(0)
+		false), pipe0_reading_address(0)
 {
 }
 
@@ -324,13 +321,13 @@ void RF24::printDetails(void)
 	print_byte_register(PSTR("CONFIG"), CONFIG);
 	print_byte_register(PSTR("DYNPD/FEATURE"), DYNPD, 2);
 
-	printf_P(PSTR("Data Rate\t = %S\r\n"),
+	printf_P(PSTR("Data Rate\t = "PRIPSTR()"\r\n"),
 	pgm_read_word(&rf24_datarate_e_str_P[getDataRate()]));
-	printf_P(PSTR("Model\t\t = %S\r\n"),
+	printf_P(PSTR("Model\t\t = "PRIPSTR()"\r\n"),
 	pgm_read_word(&rf24_model_e_str_P[isPVariant()]));
-	printf_P(PSTR("CRC Length\t = %S\r\n"),
+	printf_P(PSTR("CRC Length\t = "PRIPSTR()"\r\n"),
 	pgm_read_word(&rf24_crclength_e_str_P[getCRCLength()]));
-	printf_P(PSTR("PA Power\t = %S\r\n"),
+	printf_P(PSTR("PA Power\t = "PRIPSTR()"\r\n"),
 	pgm_read_word(&rf24_pa_dbm_e_str_P[getPALevel()]));
 }
 
@@ -345,8 +342,8 @@ void RF24::begin(void)
 	// Initialize SPI bus
 	SPI.begin();
 
-	ce(LOW);
-	csn(HIGH);
+	ce(LOW); //TX
+	csn(HIGH); // chip select. trailing edge for new command
 
 	// Must allow the radio time to settle else configuration bits will not necessarily stick.
 	// This is actually only required following power up but some settling time also appears to
@@ -359,7 +356,7 @@ void RF24::begin(void)
 	// Set 1500uS (minimum for 32B payload in ESB@250KBPS) timeouts, to make testing a little easier
 	// WARNING: If this is ever lowered, either 250KBS mode with AA is broken or maximum packet
 	// sizes must never be used. See documentation for a more complete explanation.
-	write_register(SETUP_RETR, (B0101 << ARD) | (B1111 << ARC));
+	write_register(SETUP_RETR, (0b0101 << ARD) | (0b1111 << ARC));
 
 	// Restore our default PA level
 	setPALevel(RF24_PA_MAX);
@@ -385,7 +382,7 @@ void RF24::begin(void)
 
 	// Reset current status
 	// Notice reset and flush is the last thing we do
-	write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+	clearInterrupts();
 
 	// Set up default configuration.  Callers can always change it later.
 	// This channel should be universally safe and not bleed over into adjacent
@@ -402,18 +399,14 @@ void RF24::begin(void)
 void RF24::startListening(void)
 {
 	write_register(CONFIG, read_register(CONFIG) | _BV(PWR_UP) | _BV(PRIM_RX));
-	write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
+	clearInterrupts();
 
 	// Restore the pipe0 adddress, if exists
 	if (pipe0_reading_address)
 		write_register(RX_ADDR_P0,
 				reinterpret_cast<const uint8_t*>(&pipe0_reading_address), 5);
 
-#if 0
-	// Flush buffers
-	flush_rx();
-	flush_tx();
-#endif
+
 
 	// Go!
 	ce(HIGH);
@@ -476,8 +469,8 @@ bool RF24::write(const void* buf, uint8_t len, const bool multicast)
 	{
 		status = read_register(OBSERVE_TX, &observe_tx, 1);
 		// top 4 bits are lost packets, lower 4 are retransmitted
-		IF_SERIAL_DEBUG(Serial.print(observe_tx,HEX));
-		timedOut = ((micros() - sent_at)> timeout);
+		IF_SERIAL_DEBUG(print_observe_tx(observe_tx));
+		timedOut = ((micros() - sent_at) > timeout);
 	} while (!(status & ( _BV(TX_DS) | _BV(MAX_RT))) && !timedOut);
 
 	// The part above is what you could recreate with your own interrupt handler,
@@ -486,13 +479,13 @@ bool RF24::write(const void* buf, uint8_t len, const bool multicast)
 
 	// Call this when you get an interrupt
 	// The status tells us three things
-  // * The send was successful (TX_DS)
+	// * The send was successful (TX_DS)
 	// * The send failed, too many retries (MAX_RT)
 	// * There is an ack packet waiting (RX_DR)
 	bool tx_ok, tx_fail;
 	whatHappened(tx_ok, tx_fail, ack_payload_available);
 
-  //printf("%u%u%u\r\n",tx_ok,tx_fail,ack_payload_available);
+	//printf("%u%u%u\r\n",tx_ok,tx_fail,ack_payload_available);
 
 	result = tx_ok;
 	IF_SERIAL_DEBUG(printf("%s %s\n",result?"...OK.":"...Failed", timedOut?"Timed out":""));
@@ -501,8 +494,8 @@ bool RF24::write(const void* buf, uint8_t len, const bool multicast)
 	if (ack_payload_available)
 	{
 		ack_payload_length = getDynamicPayloadSize();
-		IF_SERIAL_DEBUG(Serial.print("[AckPacket]/"));
-        IF_SERIAL_DEBUG(Serial.println(ack_payload_length,DEC));
+		IF_SERIAL_DEBUG(printf("[AckPacket]/"));
+        IF_SERIAL_DEBUG(printf("%d\n", ack_payload_length));
 	}
 
 	return result;
@@ -512,11 +505,14 @@ bool RF24::write(const void* buf, uint8_t len, const bool multicast)
 void RF24::startWrite(const void* buf, uint8_t len, const bool multicast)
 {
 	// Transmitter power-up
-  write_register(CONFIG, ( read_register(CONFIG) | _BV(PWR_UP) ) & ~_BV(PRIM_RX) );
+	write_register(CONFIG,
+			(read_register(CONFIG) | _BV(PWR_UP)) & ~_BV(PRIM_RX));
 
 	// Send the payload - Unicast (W_TX_PAYLOAD) or multicast (W_TX_PAYLOAD_NO_ACK)
 	write_payload(buf, len,
-		 multicast?static_cast<uint8_t>(W_TX_PAYLOAD_NO_ACK):static_cast<uint8_t>(W_TX_PAYLOAD) ) ;
+			multicast ?
+					static_cast<uint8_t>(W_TX_PAYLOAD_NO_ACK) :
+					static_cast<uint8_t>(W_TX_PAYLOAD));
 
 	// Allons!
 	ce(HIGH);
@@ -544,7 +540,7 @@ uint8_t RF24::getDynamicPayloadSize(void)
 bool RF24::hasReceivedData()
 {
 	uint8_t status = get_status();
-	uint8_t pipe_num = (status >> RX_P_NO) & B111;
+	uint8_t pipe_num = (status >> RX_P_NO) & 0b111;
 	return pipe_num != 7;
 }
 
@@ -553,6 +549,8 @@ bool RF24::available(void)
 {
 	return available(NULL);
 }
+
+/****************************************************************************/
 
 bool RF24::available(uint8_t* pipe_num)
 {
@@ -567,7 +565,7 @@ bool RF24::available(uint8_t* pipe_num)
 	{
 		// If the caller wants the pipe number, include that
 		if (pipe_num)
-			*pipe_num = (status >> RX_P_NO) & B111;
+			*pipe_num = (status >> RX_P_NO) & 0b111;
 
 		// Clear the status bit
 
@@ -610,15 +608,7 @@ void RF24::whatHappened(bool& tx_ok, bool& tx_fail, bool& rx_ready)
 	tx_ok = status & _BV(TX_DS);
 	tx_fail = status & _BV(MAX_RT);
 	rx_ready = status & _BV(RX_DR);
-	IF_SERIAL_DEBUG(
-			Serial.print("TX_DS=");
-			Serial.print(tx_ok);
-			Serial.print(" MAX_RT=");
-			Serial.print(tx_fail);
-			Serial.print(" RX_DR=");
-			Serial.print(rx_ready);
-			Serial.println();
-	);
+	IF_SERIAL_DEBUG(printf("tx_ok=%d tx_fail=%d rx_ready=%d\n", tx_ok, tx_fail, rx_ready));
 }
 
 /****************************************************************************/
@@ -685,6 +675,9 @@ void RF24::closeReadingPipe(uint8_t pipe)
 
 /****************************************************************************/
 
+/*
+ * NRF24L01 only (not P). This is executable in power down or stand by modes only.
+ */
 void RF24::toggle_features(void)
 {
 	csn(LOW);
@@ -757,7 +750,7 @@ void RF24::writeAckPayload(uint8_t pipe, const void* buf, uint8_t len)
 	const uint8_t* current = reinterpret_cast<const uint8_t*>(buf);
 
 	csn(LOW);
-	SPI.transfer( W_ACK_PAYLOAD | (pipe & B111));
+	SPI.transfer( W_ACK_PAYLOAD | (pipe & 0b111));
 	const uint8_t max_payload_size = 32;
 	uint8_t data_len = min(len,max_payload_size);
 	while (data_len--)
@@ -787,7 +780,7 @@ bool RF24::isPVariant(void)
 void RF24::setAutoAck(bool enable)
 {
 	if (enable)
-		write_register(EN_AA, B111111);
+		write_register(EN_AA, 0b111111);
 	else
 		write_register(EN_AA, 0);
 }
@@ -1015,6 +1008,11 @@ void RF24::disableCRC(void)
 void RF24::setRetries(uint8_t delay, uint8_t count)
 {
 	write_register(SETUP_RETR, (delay & 0xf) << ARD | (count & 0xf) << ARC);
+}
+
+void RF24::clearInterrupts()
+{
+	write_register(STATUS, _BV(RX_DR) | _BV(TX_DS) | _BV(MAX_RT));
 }
 
 /****************************************************************************/

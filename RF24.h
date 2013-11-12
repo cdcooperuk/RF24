@@ -22,7 +22,8 @@
  *
  * For use with setPALevel()
  */
-typedef enum {
+typedef enum
+{
 	RF24_PA_MIN = 0, RF24_PA_LOW, RF24_PA_HIGH, RF24_PA_MAX, RF24_PA_ERROR
 } rf24_pa_dbm_e;
 
@@ -31,7 +32,8 @@ typedef enum {
  *
  * For use with setDataRate()
  */
-typedef enum {
+typedef enum
+{
 	RF24_1MBPS = 0, RF24_2MBPS, RF24_250KBPS
 } rf24_datarate_e;
 
@@ -40,7 +42,8 @@ typedef enum {
  *
  * For use with setCRCLength()
  */
-typedef enum {
+typedef enum
+{
 	RF24_CRC_DISABLED = 0, RF24_CRC_8, RF24_CRC_16
 } rf24_crclength_e;
 
@@ -48,7 +51,8 @@ typedef enum {
  * Driver for nRF24L01(+) 2.4GHz Wireless Transceiver
  */
 
-class RF24 {
+class RF24
+{
 private:
 	uint8_t ce_pin; /**< "Chip Enable" pin, activates the RX or TX role */
 	uint8_t csn_pin; /**< SPI Chip select */
@@ -347,7 +351,6 @@ public:
 	 * @param address The 40-bit address of the pipe to open.
 	 */
 	void openReadingPipe(uint8_t number, uint64_t address);
-
 
 	/**
 	 * Close a pipe after it has been previously opened.
@@ -671,6 +674,11 @@ public:
 	 * @return true if signal => -64dBm, false if not
 	 */
 	bool testRPD(void);
+
+	/**
+	 * Clear Data Ready RX , Data Sent TX , and max retransmits
+	 */
+	void clearInterrupts(void);
 
 	/**
 	 * Calculate the maximum timeout in us based on current hardware

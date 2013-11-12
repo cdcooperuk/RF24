@@ -24,12 +24,12 @@
 
 using namespace std;
 
-class SPI {
+class SPIClass {
 public:
 	
-	SPI();
+	SPIClass();
 	uint8_t transfer(uint8_t tx_);
-	virtual ~SPI();
+	virtual ~SPIClass();
 	void init();	
 	void setdevice( string devicefile );
 	void setbits( uint8_t bits );

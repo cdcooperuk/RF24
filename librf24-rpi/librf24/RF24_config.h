@@ -12,11 +12,10 @@
 
 
 #ifdef ARDUINO
-//#warning "Arduino enabled"
 #if ARDUINO < 100
-//#include <WProgram.h>
+#include <WProgram.h>
 #else
-//#include <Arduino.h>
+#include <Arduino.h>
 #endif
 #else 
 //#warning "Arduino disabled"
